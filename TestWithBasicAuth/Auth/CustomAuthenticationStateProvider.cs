@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
+//Extract token access to own service example TokenService (get, save, remove)
 public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 {
     private readonly ILocalStorageService _localStorage;
@@ -18,14 +19,25 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
         var token = await _localStorage.GetItemAsStringAsync("accessToken");
+        Console.WriteLine($"Retrieved Token: {token}");
+
         if (string.IsNullOrWhiteSpace(token))
         {
             return new AuthenticationState(_anonymous);
         }
 
-        var identity = new ClaimsIdentity(ParseClaimsFromJwt(token), "jwt");
-        var user = new ClaimsPrincipal(identity);
-        return new AuthenticationState(user);
+        try
+        {
+            var identity = new ClaimsIdentity(ParseClaimsFromJwt(token), "jwt");
+            var user = new ClaimsPrincipal(identity);
+            return new AuthenticationState(user);
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error parsing token: {ex.Message}");
+            return new AuthenticationState(_anonymous);
+        }
     }
 
     public void NotifyUserAuthentication(string token)
@@ -43,6 +55,16 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 
     private IEnumerable<Claim> ParseClaimsFromJwt(string jwt)
     {
+        if (string.IsNullOrWhiteSpace(jwt))
+        {
+            throw new ArgumentException("JWT is null or empty.");
+        }
+
+        if (jwt.Split('.').Length != 3)
+        {
+            throw new ArgumentException("JWT is not in the correct format.");
+        }
+
         var handler = new JwtSecurityTokenHandler();
         var token = handler.ReadJwtToken(jwt);
         return token.Claims;

@@ -1,8 +1,22 @@
-﻿@page "/counter"
+﻿
+@page "/counter"
+@using TestWithBasicAuth.Auth
 @inject HttpClient Http
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
 
 <PageTitle>Counter</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <p>Welcome, authenticated user!</p>
+    </Authorized>
+    <NotAuthorized>
+        <p>Please log in to access this content.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
 
 <h1>Counter</h1>
 <h2>Token: @access</h2>
@@ -13,7 +27,7 @@
 <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
 <button class="btn btn-secondary" @onclick="CheckToken">Check Saved Token</button>
 
-<h2>Saved AccesToken: @savedAccessTokenMessage</h2>
+<h2>Saved AccesToken:   @savedAccessTokenMessage</h2>
 <h2>Saved RefreshToken: @savedRefreshTokenMessage</h2>
 
 @code {
@@ -27,8 +41,8 @@
     {
         try
         {
-            var  data = new LoginDto("Jakob2", "password" );
-            var response = await Http.PostAsJsonAsync("https://localhost:7286/api/auth/login", data);
+            var  data = new LoginDto("Kalle5", "ABC123" );
+            var response = await Http.PostAsJsonAsync("https://localhost:7044/api/auth/login", data);
 
             if (response.IsSuccessStatusCode)
             {
@@ -41,6 +55,9 @@
                     // Save the tokens to local storage
                     await LocalStorage.SetItemAsync("accessToken", access);
                     await LocalStorage.SetItemAsync("refreshToken", refresh);
+
+                    var authStateProvider = (CustomAuthenticationStateProvider)AuthenticationStateProvider;
+                    authStateProvider.NotifyUserAuthentication(access);
                 }
             }
             else
@@ -56,6 +73,8 @@
             access = $"Error: {ex.Message}";
             refresh = "Error occurred while fetching tokens.";
         }
+
+        StateHasChanged();
     }
 
     private async Task CheckToken()
@@ -65,10 +84,10 @@
 
         savedAccessTokenMessage = string.IsNullOrEmpty(savedAccessToken)
             ? "No token saved."
-            : $"Saved Access Token: {savedAccessToken}"; 
+            : $" {savedAccessToken}"; 
         savedRefreshTokenMessage = string.IsNullOrEmpty(savedRefreshToken)
             ? "No token saved."
-             : $"Saved Refresh Token: {savedRefreshToken}";
+             : $" {savedRefreshToken}";
     }
 
     private record LoginDto(string UserName, string Password);
