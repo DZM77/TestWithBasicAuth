@@ -1,35 +1,48 @@
-﻿
-@page "/counter"
+﻿@page "/counter"
 @using TestWithBasicAuth.Auth
 @inject HttpClient Http
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpClientFactory HttpClientFactory
+
 
 
 <PageTitle>Counter</PageTitle>
 
-<AuthorizeView>
+<AuthorizeView Roles="Admin"> @* Kalle5 which is hardcoded in the request is Admin! *@
     <Authorized>
-        <p>Welcome, authenticated user!</p>
-    </Authorized>
+        <p>Welcome, authenticated user with role admin!</p>
+    </Authorized>  
     <NotAuthorized>
         <p>Please log in to access this content.</p>
     </NotAuthorized>
 </AuthorizeView>
 
 
-<h1>Token demo</h1>
+<h1>Token Demo</h1>
 <h2>Token: @access</h2>
 <h2>Refresh: @refresh</h2>
 
 <p role="status">Current count: @currentCount</p>
 
-<button class="btn btn-primary"   @onclick="IncrementCount">Login</button>
+<button class="btn btn-primary" @onclick="IncrementCount">Login</button>
 <button class="btn btn-secondary" @onclick="CheckToken">Check Saved Token</button>
 <button class="btn btn-secondary" @onclick="Logout">Logout</button>
 
 <h2>Saved AccesToken:   @savedAccessTokenMessage</h2>
 <h2>Saved RefreshToken: @savedRefreshTokenMessage</h2>
+
+<button class="btn btn-secondary" @onclick="GetCompany">Get protected endpoint</button>
+
+<h2>StatusCode: @statusCode</h2>
+
+@if (companyDto is not null)
+{
+    <h2>Company</h2>
+    <h2>Id:         @companyDto.Id</h2>
+    <h2>Name:       @companyDto.Name</h2>
+    <h2>Address:    @companyDto.Address</h2>
+}
 
 @code {
     private int currentCount = 0;
@@ -37,12 +50,14 @@
     private string refresh = string.Empty;
     private string savedRefreshTokenMessage = string.Empty;
     private string savedAccessTokenMessage = string.Empty;
+    private string statusCode = "No request done";
+    private CompanyDto? companyDto;
 
     private async Task IncrementCount()
     {
         try
         {
-            var  data = new LoginDto("Kalle5", "ABC123" );
+            var data = new LoginDto("", "password");
             var response = await Http.PostAsJsonAsync("https://localhost:7044/api/auth/login", data);
 
             if (response.IsSuccessStatusCode)
@@ -85,7 +100,7 @@
 
         savedAccessTokenMessage = string.IsNullOrEmpty(savedAccessToken)
             ? "No token saved."
-            : $" {savedAccessToken}"; 
+            : $" {savedAccessToken}";
         savedRefreshTokenMessage = string.IsNullOrEmpty(savedRefreshToken)
             ? "No token saved."
              : $" {savedRefreshToken}";
@@ -93,12 +108,37 @@
 
     private async Task Logout()
     {
-        //No logout endpoint implemented that clears refreshtokens 
+        //No logout endpoint implemented that clears refreshtokens
 
         var authStateProvider = (CustomAuthenticationStateProvider)AuthenticationStateProvider;
         await authStateProvider.NotifyUserLogout();
     }
 
+    private async Task GetCompany()
+    {
+        var httpClient = HttpClientFactory.CreateClient("SecureApi");
+        var response = await httpClient.GetAsync("https://localhost:7044/api/companies/1");
+        statusCode = response.StatusCode.ToString();
+
+        if (response.IsSuccessStatusCode)
+        {
+            companyDto = await response.Content.ReadFromJsonAsync<CompanyDto>();
+        }
+        else
+        {
+            companyDto = null;
+        }
+        
+    }
+
     private record LoginDto(string UserName, string Password);
     private record TokenDto(string AccessToken, string RefreshToken);
+
+    public record CompanyDto
+    {
+        public int Id { get; init; }
+        public string? Name { get; init; }
+        public string? Address { get; init; }
+        //public IEnumerable<EmployeeDto>? Employees { get; init; }
+    }
 }
