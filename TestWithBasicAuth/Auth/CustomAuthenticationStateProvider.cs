@@ -47,9 +47,20 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
         NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
     }
 
-    public void NotifyUserLogout()
+    public async Task NotifyUserLogout()
     {
-        _localStorage.RemoveItemAsync("accessToken");
+        try
+        {
+            await Task.WhenAll(
+                    _localStorage.RemoveItemAsync("accessToken").AsTask(),
+                    _localStorage.RemoveItemAsync("refreshToken").AsTask());
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error removing items from local storage: {ex.Message}");
+            throw;
+        }
+           
         NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_anonymous)));
     }
 

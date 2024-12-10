@@ -18,14 +18,15 @@
 </AuthorizeView>
 
 
-<h1>Counter</h1>
+<h1>Token demo</h1>
 <h2>Token: @access</h2>
 <h2>Refresh: @refresh</h2>
 
 <p role="status">Current count: @currentCount</p>
 
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+<button class="btn btn-primary"   @onclick="IncrementCount">Login</button>
 <button class="btn btn-secondary" @onclick="CheckToken">Check Saved Token</button>
+<button class="btn btn-secondary" @onclick="Logout">Logout</button>
 
 <h2>Saved AccesToken:   @savedAccessTokenMessage</h2>
 <h2>Saved RefreshToken: @savedRefreshTokenMessage</h2>
@@ -88,6 +89,14 @@
         savedRefreshTokenMessage = string.IsNullOrEmpty(savedRefreshToken)
             ? "No token saved."
              : $" {savedRefreshToken}";
+    }
+
+    private async Task Logout()
+    {
+        //No logout endpoint implemented that clears refreshtokens 
+
+        var authStateProvider = (CustomAuthenticationStateProvider)AuthenticationStateProvider;
+        await authStateProvider.NotifyUserLogout();
     }
 
     private record LoginDto(string UserName, string Password);
