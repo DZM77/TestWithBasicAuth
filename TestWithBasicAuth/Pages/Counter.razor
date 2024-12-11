@@ -9,7 +9,7 @@
 
 <PageTitle>Counter</PageTitle>
 
-<AuthorizeView Roles="Admin"> @* Kalle5 which is hardcoded in the request is Admin! *@
+<AuthorizeView Roles="Admin">   @* Nina19 which is hardcoded in the request is Admin! *@
     <Authorized>
         <p>Welcome, authenticated user with role admin!</p>
     </Authorized>  
@@ -57,7 +57,12 @@
     {
         try
         {
-            var data = new LoginDto("", "password");
+            //Set UserName and Password to actual User in Database in API! 
+            // UserName generates randomly when seeding. 
+            // Password comes from User Secret JSON.
+            // All users with position Manager have Role Admin
+            
+            var data = new LoginDto("Nina19", "password");
             var response = await Http.PostAsJsonAsync("https://localhost:7044/api/auth/login", data);
 
             if (response.IsSuccessStatusCode)
